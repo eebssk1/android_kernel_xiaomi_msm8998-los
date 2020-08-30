@@ -10,11 +10,11 @@
 #
 # Copyright (C) 1995-2001 by Russell King
 
-LDFLAGS_vmlinux	:=--no-undefined -X
+LDFLAGS_vmlinux	:=--no-undefined -X -O3 -z combreloc
 CPPFLAGS_vmlinux.lds = -DTEXT_OFFSET=$(TEXT_OFFSET)
 OBJCOPYFLAGS	:=-O binary -R .note -R .note.gnu.build-id -R .comment -S
 GZFLAGS		:=-9
-
+LDFLAGS         :=-O2
 ifneq ($(CONFIG_RELOCATABLE),)
 LDFLAGS_vmlinux		+= -pie -Bsymbolic
 endif

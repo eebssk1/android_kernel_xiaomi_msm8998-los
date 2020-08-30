@@ -6,7 +6,7 @@
 #
 
 obj-$(CONFIG_NET)		:= socket.o core/
-
+ccflags-y			+= -Wno-array-bounds
 tmp-$(CONFIG_COMPAT) 		:= compat.o
 obj-$(CONFIG_NET)		+= $(tmp-y)
 
