@@ -73,7 +73,7 @@ jobs:
         git rev-parse HEAD >> build/other_info.txt
         make sagit_eh_defconfig O=build; ck
         export LDFLAGS="-O2 -z combreloc"
-        export KCFLAGS="-mcpu=cortex-a73.cortex-a53+crc+fp+simd+aes+sha2 -ftree-slp-vectorize -ftree-lrs -fsched-spec-load -fsched-stalled-insns=2 -fpredictive-commoning -fpeel-loops  -fipa-pta -fgraphite-identity -fgraphite -fbranch-target-load-optimize -fbtr-bb-exclusive  -fno-web"
+        export KCFLAGS="-mcpu=cortex-a73.cortex-a53+crc+fp+simd+aes+sha2 -ftree-slp-vectorize -ftree-lrs -fsched-spec-load -flimit-function-alignment -flive-range-shrinkage -fsched-stalled-insns=3 -fpredictive-commoning -fpeel-loops  -fipa-pta -fgraphite-identity -fgraphite -fbranch-target-load-optimize -fbtr-bb-exclusive  -fno-web"
         make -j3 O=build 2>&1 | tee build/out.log
         exit ${PIPESTATUS[0]}
     displayName: "Build"
