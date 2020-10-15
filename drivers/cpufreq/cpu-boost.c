@@ -144,6 +144,9 @@ static int boost_adjust_notify(struct notifier_block *nb, unsigned long val,
 
 		cpufreq_verify_within_limits(policy, ib_min, UINT_MAX);
 
+		if (policy->cur < ib_min)
+			policy->max = ib_min;
+
 		pr_debug("CPU%u policy min after boost: %u kHz\n",
 			 cpu, policy->min);
 		break;
