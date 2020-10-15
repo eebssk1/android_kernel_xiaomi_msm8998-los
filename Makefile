@@ -397,7 +397,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -std=gnu89 $(call cc-option,-fno-PIE) $(call cc-option,-Wno-misleading-indentation) $(call cc-option,-Wno-duplicate-decl-specifier)
+		   -std=gnu89 $(call cc-option,-fno-PIE) $(call cc-option,-Wno-misleading-indentation) $(call cc-option,-Wno-duplicate-decl-specifier) $(call cc-option,-Wno-missing-attributes)
 
 ifeq ($(TARGET_BOARD_TYPE),auto)
 KBUILD_CFLAGS    += -DCONFIG_PLATFORM_AUTO
