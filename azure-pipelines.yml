@@ -1,0 +1,103 @@
+# C/C++ with GCC
+# Build your C/C++ project with GCC using make.
+# Add steps that publish test results, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/c-cpp/gcc
+
+pool:
+  vmImage: 'ubuntu-18.04'
+
+jobs:
+- job: main
+  timeoutInMinutes: 150
+  steps: 
+  - task: CmdLine@2
+    inputs:
+      script: |
+        sudo apt-get update
+    displayName: "Update"
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        function ck () {
+          if [ $? -ne 0 ]; then
+            exit $?
+          fi
+        }
+        sudo apt-get -y install libc6; ck
+        sudo apt-get -y install libssl-dev; ck
+        sudo apt-get -y install bc; ck
+        sudo apt-get -y install aria2; ck
+        sudo apt-get -y install pwgen; ck
+        sudo apt-get -y install flex; ck
+        wget http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.29-0ubuntu2_amd64.deb
+        sudo dpkg -i libc6_2.29-0ubuntu2_amd64.deb; ck
+    displayName: "Install deps"
+    condition: succeeded()
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        function ck () {
+          if [ $? -ne 0 ]; then
+            exit $?
+          fi
+        }
+        aria2c --show-console-readout false -x4 -s4 "https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-x86_64-arm-none-linux-gnueabihf.tar.xz?revision=fed31ee5-2ed7-40c8-9e0e-474299a3c4ac&la=en&hash=76DAF56606E7CB66CC5B5B33D8FB90D9F24C9D20"; ck
+        aria2c --show-console-readout false -x4 -s4 "https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.xz?revision=61c3be5d-5175-4db6-9030-b565aae9f766&la=en&hash=0A37024B42028A9616F56A51C2D20755C5EBBCD7"; ck
+        echo Unpack...
+        tar -xf gcc-arm-9.2-2019.12-x86_64-arm-none-linux-gnueabihf.tar.xz
+        tar -xf gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.xz
+        mkdir build
+        mkdir build/arts
+        pwgen -s 8 1 > build/rstr.txt
+        cat build/rstr.txt
+    displayName: "Prepare"
+    condition: succeeded()
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        function ck () {
+          if [ $? -ne 0 ];then
+            exit $?
+          fi
+        }
+        export LOCALVERSION=-$(cat build/rstr.txt)
+        export PATH=$PWD/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin:$PWD/gcc-arm-9.2-2019.12-x86_64-arm-none-linux-gnueabihf/bin:$PATH
+        export ARCH=arm64
+        export CROSS_COMPILE=aarch64-none-linux-gnu-
+        export CROSS_COMPILE_ARM32=arm-none-linux-gnueabihf-
+        date >> build/other_info.txt
+        cat build/rstr.txt >> build/other_info.txt
+        git rev-parse HEAD >> build/other_info.txt
+        make sagit_eh_defconfig O=build; ck
+        export LDFLAGS="-O2 -z combreloc"
+        export KCFLAGS="-mcpu=cortex-a73.cortex-a53+crc+fp+simd+aes+sha2 -ftree-slp-vectorize -ftree-lrs -fsched-spec-load -fsched-stalled-insns=2 -fpredictive-commoning -fpeel-loops  -fipa-pta -fgraphite-identity -fgraphite -fbranch-target-load-optimize -fbtr-bb-exclusive  -fno-web"
+        make -j3 O=build 2>&1 | tee build/out.log
+        exit ${PIPESTATUS[0]}
+    displayName: "Build"
+    condition: succeeded()
+  - task: Bash@3
+    inputs:
+      targetType : 'inline'
+      script: |
+        function ck () {
+          if [ $? -ne 0 ]; then
+            exit $?
+          fi
+        }
+        cp build/out.log build/arts/; ck
+        gzip -6 build/arts/out.log; ck
+        cp build/other_info.txt build/arts/; ck
+        cp build/arch/arm64/boot/Image.gz build/arts/; ck
+        cp build/arch/arm64/boot/Image.gz-dtb build/arts/; ck
+    displayName: "Collect Files"
+    condition: succeeded()
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: 'build/arts'
+      ArtifactName: 'result'
+      publishLocation: 'Container'
+    displayName: "Publish"
+    condition: succeeded()
